@@ -65,38 +65,63 @@ var tmpl = '<li><input type="text"><span></span></li>',
 
 
   	function save(){
-  		var arr = [];
-  		mainUl.find('span').each(function(){
-    		if (arr!=="") {
-          arr.push($(this).text());
+  	  var obj = [];
+      var tempobj = {};
+      var temptext = [],
+          tempclass = [];
+      mainUl.find('span').each(function(){
+        if (temptext.text!=="") {
+          temptext.push($(this).text());
         };
-  		});
-      var arr2 = [];
-      mainUl.find('li').each(function(){
-          if($(this).hasClass("is-done")){
-            arr2.push("is-done");
-          }
-          else{
-            arr2.push("a");
-          }
       });
-  		localStorage.todoItems = JSON.stringify(arr);
-      localStorage["class"] = JSON.stringify(arr2);
+      mainUl.find('li').each(function(){
+        if($(this).hasClass("is-done")){
+          tempclass.push("is-done");
+        }
+        else{
+          tempclass.push("none");
+        }
+      });
+      for(var i=0;i<tempclass.length;i++){
+        // tempobj.push(tempclass[i],temptext[i]);
+        tempobj = new objectconstruct(tempclass[i],temptext[i]);
+        obj.push(tempobj);
+      }
+      // obj.push(tempobj);
+      console.log(JSON.stringify(obj));
+
+      $.ajax({
+        type: 'PUT',
+        url: '/items/:id',
+        data:JSON.stringify(obj),
+        dataType:"json",
+        contentType: 'application/json',
+        success: function(data) {
+          console.log('save success');
+        }
+      });
   	};
 
   	function load(){
-  		var arr = JSON.parse( localStorage.todoItems ), i;
-      var arr2 = JSON.parse( localStorage["class"] );
-  		for(i=0; i<arr.length; i+=1){
-        if (arr[i]!==null) {
-          $(tmpl).appendTo(mainUl).find('span').text(arr[i]).parents().addClass(arr2[i]);;
-
+      $.ajax({
+        type: 'GET',
+        url: '/item',
+        dataType:"json",
+        contentType: 'application/json',
+        success: function(data) {
+          console.log('success');
+          // console.log(JSON.stringify(data));
+          for (var i = 0; i < data.length; i++) {
+            $(tmpl).appendTo(mainUl).find('span').text(data[i].text).parents().addClass(data[i].class);
+          };
         }
-      };
-  	}
+      });
+    
+  	};
 
-
-
-
+    function objectconstruct(thisclass,thistext){
+      this.class = thisclass;
+      this.text = thistext;
+    }
 
 }());
