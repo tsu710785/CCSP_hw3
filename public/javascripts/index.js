@@ -9,6 +9,10 @@ var tmpl = '<li><input type="text"><span></span></li>',
     deleteUl = $('.delete'),          // delete <ul>
     doneUl = $('.done');              // done <ul>
     var flag = false;
+    var deleteORchangePosition = false;
+    var startPosition,endPosition;
+    
+    
 
     addButton.on('click',function(){
     	$(tmpl).prependTo(mainUl).addClass('is-editing').find('input').focus();
@@ -24,7 +28,8 @@ var tmpl = '<li><input type="text"><span></span></li>',
           li = input.parents('li');
           li.find('span').text( input.val() );
           li.removeClass('is-editing');
-          save();
+          //save();
+          add(input.val());
           }
       }
       
@@ -36,32 +41,106 @@ var tmpl = '<li><input type="text"><span></span></li>',
     	connectWith:[deleteUl,doneUl],
     	// connectWith:doneUl,
     	start: function( event, ui ){
+        deleteORchangePosition = false;
     		placeholder.addClass('is-dragging')
+        startPosition = ui.item.index();
+        //console.log("start in " + startPosition);
     	},
     	beforeStop: function( event, ui ){
     		placeholder.removeClass('is-dragging')
     	},
     	stop: function( event, ui){
-    		save()
+        endPosition = ui.item.index();
+    		//console.log("end in " + endPosition);
+        if(deleteORchangePosition===false){
+          locationupdate(startPosition,(endPosition-startPosition));
+        }
     	},
 
     });
 
     deleteUl.sortable({
     	connectWith:mainUl,
-		receive: function (event,ui) {
+		  receive: function (event,ui) {
        tolerance: "pointer";
 		   ui.item.remove();
-		}
+       deleteitem(ui.item.text());
+       deleteORchangePosition = true;
+		  }
     });
 
     doneUl.sortable({
     	receive: function (event,ui) {
     		ui.item.appendTo(mainUl).addClass('is-done');
-    		save();
+    		classupdate(ui.item.text());
     	}
     });
 
+    function classupdate(str){
+      obj = new objectconstruct("is-done",str);
+      console.log(obj);
+      $.ajax({
+          type: 'PUT',
+          url: '/items/:id',
+          data:obj,
+          dataType:'application/json',
+          success: function(data) {
+            console.log('success change class');
+          }
+      });
+    }
+
+    function deleteitem(str){
+      var arr = [];
+      obj = new objectconstruct("del",str);
+      $.ajax({
+          type: 'DELETE',
+          url: '/items/:id',
+          data:JSON.stringify(obj),
+          dataType:"json",
+          contentType: 'application/json',
+          success: function(data) {
+            console.log('success del');
+          },
+          error: function(data){
+            console.log('fail del');
+          }
+      });
+    }
+
+
+    function locationupdate(start,distance){
+      var arr = [];
+      arr.push(start,distance);
+      $.ajax({
+        type: 'PUT',
+        url: '/items/:id/reposition/:new_position',
+        data:JSON.stringify(arr),
+        dataType:"json",
+        contentType: 'application/json',
+        success: function(data) {
+          console.log('success add');
+          //console.log(JSON.stringify(data));
+        }
+      });
+    }
+
+    function add(addnew){
+      var arr = [];
+      var obj = new objectconstruct("none",addnew);
+      arr.push(obj);
+      $.ajax({
+          type: 'POST',
+          url: '/items',
+          data:JSON.stringify(obj),
+          dataType:"json",
+          contentType: 'application/json',
+          success: function(data) {
+            console.log('success add');
+            console.log(JSON.stringify(data));
+          }
+      });
+    }
 
 
   	function save(){
@@ -83,11 +162,9 @@ var tmpl = '<li><input type="text"><span></span></li>',
         }
       });
       for(var i=0;i<tempclass.length;i++){
-        // tempobj.push(tempclass[i],temptext[i]);
         tempobj = new objectconstruct(tempclass[i],temptext[i]);
         obj.push(tempobj);
       }
-      // obj.push(tempobj);
       console.log(JSON.stringify(obj));
 
       $.ajax({
@@ -105,7 +182,7 @@ var tmpl = '<li><input type="text"><span></span></li>',
   	function load(){
       $.ajax({
         type: 'GET',
-        url: '/item',
+        url: '/items',
         dataType:"json",
         contentType: 'application/json',
         success: function(data) {
@@ -117,11 +194,11 @@ var tmpl = '<li><input type="text"><span></span></li>',
         }
       });
     
-  	};
+  	}
 
     function objectconstruct(thisclass,thistext){
       this.class = thisclass;
       this.text = thistext;
-    }
+    };
 
 }());
