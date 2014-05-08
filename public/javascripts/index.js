@@ -53,7 +53,7 @@ var tmpl = '<li><input type="text"><span></span></li>',
         endPosition = ui.item.index();
     		//console.log("end in " + endPosition);
         if(deleteORchangePosition===false){
-          locationupdate(startPosition,(endPosition-startPosition));
+          locationupdate(startPosition,endPosition);
         }
     	},
 
@@ -63,8 +63,8 @@ var tmpl = '<li><input type="text"><span></span></li>',
     	connectWith:mainUl,
 		  receive: function (event,ui) {
        tolerance: "pointer";
-		   ui.item.remove();
-       deleteitem(ui.item.text());
+       deleteitem(ui.item.text(),startPosition);
+       ui.item.remove();
        deleteORchangePosition = true;
 		  }
     });
@@ -72,16 +72,16 @@ var tmpl = '<li><input type="text"><span></span></li>',
     doneUl.sortable({
     	receive: function (event,ui) {
     		ui.item.appendTo(mainUl).addClass('is-done');
-    		classupdate(ui.item.text());
+    		classupdate(ui.item.text(),startPosition);
     	}
     });
 
-    function classupdate(str){
+    function classupdate(str,location){
       obj = new objectconstruct("is-done",str);
-      console.log(obj);
+      //console.log(obj);
       $.ajax({
           type: 'PUT',
-          url: '/items/:id',
+          url: '/items/'+ location,
           data:obj,
           dataType:'application/json',
           success: function(data) {
@@ -90,12 +90,13 @@ var tmpl = '<li><input type="text"><span></span></li>',
       });
     }
 
-    function deleteitem(str){
+    function deleteitem(str,location){
+      console.log("delete location"+location);
       var arr = [];
       obj = new objectconstruct("del",str);
       $.ajax({
           type: 'DELETE',
-          url: '/items/:id',
+          url: '/items/'+location,
           data:JSON.stringify(obj),
           dataType:"json",
           contentType: 'application/json',
@@ -109,18 +110,16 @@ var tmpl = '<li><input type="text"><span></span></li>',
     }
 
 
-    function locationupdate(start,distance){
+    function locationupdate(start,end){
       var arr = [];
-      arr.push(start,distance);
       $.ajax({
         type: 'PUT',
-        url: '/items/:id/reposition/:new_position',
+        url: '/items/' + start +'/reposition/' + end,
         data:JSON.stringify(arr),
         dataType:"json",
         contentType: 'application/json',
         success: function(data) {
           console.log('success add');
-          //console.log(JSON.stringify(data));
         }
       });
     }
